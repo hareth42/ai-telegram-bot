@@ -160,14 +160,23 @@ def main():
     threading.Thread(target=run_flask, daemon=True).start()
 
     proxy_url = "http://proxy.server:3128"
-    app_bot = (
-        Application.builder()
-        .token(BOT_TOKEN)
-        .proxy_url(proxy_url)
-        .get_updates_proxy_url(proxy_url)
-        .http_version("1.1")
-        .get_updates_http_version("1.1")
-        .build()
+    # ==================== التشغيل الرئيسي ====================
+def main():
+    threading.Thread(target=run_flask, daemon=True).start()
+
+    # السطر المعدل بسطر واحد لتفادي أخطاء الأقواس
+    proxy_url = "http://proxy.server:3128"
+    app_bot = Application.builder().token(BOT_TOKEN).proxy_url(proxy_url).get_updates_proxy_url(proxy_url).build()
+
+    app_bot.add_handler(CommandHandler("start", start))
+    app_bot.add_handler(CallbackQueryHandler(button_handler))
+    app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    print("🤖 الوكيل الذكي وسيرفر الويب يعملان بنجاح...")
+    app_bot.run_polling()
+
+if name == "main":
+    main()
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CallbackQueryHandler(button_handler))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
