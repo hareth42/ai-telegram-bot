@@ -7,9 +7,9 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
 
 # ==================== ضع بياناتك هنا ====================
-BOT_TOKEN = "8322155608:AAG-okOHDvrB1o1m_8TIDladVe1gbnYZRH8"
-GEMINI_API_KEY = "AQ.Ab8RN6LocdZ7m93THCJUoa7492VWIbn1MoXCfdgrDMTj0t4ZMw"
-USDT_WALLET_ADDRESS = "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX"
+BOT_TOKEN = "ضع_هنا_توكن_البوت"
+GEMINI_API_KEY = "ضع_هنا_مفتاح_GEMINI"
+USDT_WALLET_ADDRESS = "ضع_هنا_عنوان_محفظة_USDT"
 
 # ==================== سيرفر ويب لـ UptimeRobot ====================
 app = Flask(__name__)
@@ -159,24 +159,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     threading.Thread(target=run_flask, daemon=True).start()
 
-    proxy_url = "http://proxy.server:3128"
-    # ==================== التشغيل الرئيسي ====================
-def main():
-    threading.Thread(target=run_flask, daemon=True).start()
-
-    # السطر المعدل بسطر واحد لتفادي أخطاء الأقواس
-    proxy_url = "http://proxy.server:3128"
-    app_bot = Application.builder().token(BOT_TOKEN).proxy_url(proxy_url).get_updates_proxy_url(proxy_url).build()
-
-    app_bot.add_handler(CommandHandler("start", start))
-    app_bot.add_handler(CallbackQueryHandler(button_handler))
-    app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-    print("🤖 الوكيل الذكي وسيرفر الويب يعملان بنجاح...")
-    app_bot.run_polling()
-
-if name == "main":
-    main()
+    app_bot = Application.builder().token(BOT_TOKEN).build()
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CallbackQueryHandler(button_handler))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
