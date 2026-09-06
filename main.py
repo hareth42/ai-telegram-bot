@@ -194,9 +194,19 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     referral_link = f"https://t.me/{bot_username}?start={user_id}"
 
     welcome_text = (
-        f"🤖 **مرحباً بك في منصة الوكيل الذكي (B2B & B2C SaaS)!**\n\n"
-        f"🎁 **رصيدك الحالي:** {user_data['credits']} محاولات.\n\n"
-        f"🔗 **رابط الإحالة للحصول على رصيد مجاني:**\n`{referral_link}`"
+        f"🤖 **مرحباً بك في الوكيل الذكي لكتابة المحتوى والإعلانات!**\n\n"
+        f"🎁 **رصيدك الحالي:** {user_data['credits']} محاولات مجانية.\n\n"
+        f"💡 **الخدمات:** صياغة إعلانات احترافية، كتابة وصف منتجات، وخطط تسويقية.\n\n"
+        f"🔗 **رابط الإحالة الخاص بك (للحصول على 5 نقاط مجاناً):**\n`{referral_link}`"
+    )
+
+    keyboard = [
+        [InlineKeyboardButton("⭐ شراء رصيد (Stars)", callback_data="buy_stars")],
+        [InlineKeyboardButton("💳 شراء رصيد (USDT TRC20)", callback_data="buy_usdt")],
+        [InlineKeyboardButton("🔑 مفتاح الـ API للربط البرمجي", callback_data="get_api_key")],
+        [InlineKeyboardButton("📊 حسابي والإحالات", callback_data="check_status")]
+    ]
+    await update.message.reply_text(welcome_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
     )
 
     keyboard = [
