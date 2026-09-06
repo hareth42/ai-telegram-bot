@@ -16,7 +16,7 @@ from telegram.ext import (
 )
 
 # ==================== الإعدادات والبيانات الأساسية ====================
-BOT_TOKEN = "8322155608:AAFZhPOtImDmiNeFAg7KbrLO4BMr9qpjN4Q"
+BOT_TOKEN = "8322155608:AAGFScpl0iuk726FmDsFykxmIq63lb9mXB4"
 GEMINI_API_KEY = "AQ.Ab8RN6LocdZ7m93THCJUoa7492VWIbn1MoXCfdgrDMTj0t4ZMw"
 USDT_WALLET_ADDRESS = "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX"
 
