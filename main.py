@@ -15,9 +15,9 @@ from telegram.ext import (
 )
 
 # ==================== البيانات الأساسية ====================
-BOT_TOKEN = "ضع_هنا_توكن_البوت"
-GEMINI_API_KEY = "ضع_هنا_مفتاح_GEMINI"
-USDT_WALLET_ADDRESS = "ضع_هنا_عنوان_محفظة_USDT"
+BOT_TOKEN = "8322155608:AAFZhPOtImDmiNeFAg7KbrLO4BMr9qpjN4Q"
+GEMINI_API_KEY = "AQ.Ab8RN6LocdZ7m93THCJUoa7492VWIbn1MoXCfdgrDMTj0t4ZMw"
+USDT_WALLET_ADDRESS = "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX"
 
 # ==================== سيرفر ويب UptimeRobot ====================
 app = Flask(__name__)
