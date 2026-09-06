@@ -27,7 +27,6 @@ app = Flask(__name__)
 def home():
     return "Agent-to-Agent SaaS Server is Running 24/7!"
 
-# نقطة استقبال طلبات الوكلاء والبوتاً الأخرى برمجياً
 @app.route('/api/v1/generate', methods=['POST'])
 def api_generate():
     data = request.get_json() or {}
@@ -51,10 +50,8 @@ def api_generate():
         conn.close()
         return jsonify({"status": "error", "message": "الرصيد غير كافٍ لاستخدام الـ API"}), 402
 
-    # توليد المحتوى من Gemini
     ai_response = generate_ai_response(prompt)
 
-    # خصم نقطة وتسجيل الطلب
     cursor.execute("UPDATE users SET credits = credits - 1 WHERE user_id = ?", (user_id,))
     cursor.execute("INSERT INTO api_logs (user_id, prompt, status) VALUES (?, ?, ?)", (user_id, prompt, "SUCCESS"))
     conn.commit()
@@ -198,15 +195,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"🎁 **رصيدك الحالي:** {user_data['credits']} محاولات مجانية.\n\n"
         f"💡 **الخدمات:** صياغة إعلانات احترافية، كتابة وصف منتجات، وخطط تسويقية.\n\n"
         f"🔗 **رابط الإحالة الخاص بك (للحصول على 5 نقاط مجاناً):**\n`{referral_link}`"
-    )
-
-    keyboard = [
-        [InlineKeyboardButton("⭐ شراء رصيد (Stars)", callback_data="buy_stars")],
-        [InlineKeyboardButton("💳 شراء رصيد (USDT TRC20)", callback_data="buy_usdt")],
-        [InlineKeyboardButton("🔑 مفتاح الـ API للربط البرمجي", callback_data="get_api_key")],
-        [InlineKeyboardButton("📊 حسابي والإحالات", callback_data="check_status")]
-    ]
-    await update.message.reply_text(welcome_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
     )
 
     keyboard = [
