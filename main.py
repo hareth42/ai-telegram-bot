@@ -15,20 +15,15 @@ from telegram.ext import (
     ContextTypes
 )
 
-# ==================== الإعدادات والمتغيرات ====================
+# ==================== الإعدادات الثابتة والصحيحة ====================
 BOT_TOKEN = "8322155608:AAGFScp10iuk726FmDsFykxmIq631b9mXB4"
 GEMINI_API_KEY = "AQ.Ab8RN6LoodZ7m93THCJUoa7492VWIbn1MoXCfdgzDNTj0t4ZMm"
 USDT_TRC20_WALLET = "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX"
 ADMIN_ID = 523589053
-# تحويل آمن لـ ADMIN_ID لمنع أي توقف للمشروع
-try:
-    ADMIN_ID = int(os.environ.get(523589053))
-except ValueError:
-    ADMIN_ID = 0
 
 logging.basicConfig(level=logging.INFO)
 
-# ==================== سيرفر WEB للتشغيل 24/7 على Render ====================
+# ==================== سيرفر WEB للتشغيل 24/7 ====================
 app = Flask(__name__)
 
 @app.route("/")
@@ -113,7 +108,7 @@ def get_zero_credit_users():
     conn.close()
     return users
 
-# ==================== كتالوج المنتجات الجاهزة والذكاء الاصطناعي ====================
+# ==================== كتالوج المنتجات الذكية ====================
 PRODUCTS = {
     "prod_ads": {
         "title": "⚡ حزمة كتابة الإعلانات المحترفة (Ad & Content AI)",
@@ -139,8 +134,6 @@ PRODUCTS = {
 }
 
 def generate_ai_response(prompt):
-    if not GEMINI_API_KEY:
-        return "خطأ: لم يتم ضبط مفتاح GEMINI_API_KEY."
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
     system_instruction = (
         "أنت الوكيل الذكي الخارق لتسويق المنتجات وتوليد النصوص الإعلانية. "
@@ -152,16 +145,11 @@ def generate_ai_response(prompt):
         if res.status_code == 200:
             return res.json()['candidates'][0]['content']['parts'][0]['text']
         return f"عذراً، حدث خطأ أثناء الاتصال بالذكاء الاصطناعي (كود: {res.status_code})."
-    except Exception as e:
+    except Exception:
         return "حدث خطأ في الاتصال بالسيرفر، يرجى المحاولة لاحقاً."
 
 # ==================== الأتمتة المالية (USDT TRC20 Auto-Checker) ====================
 async def auto_check_usdt_trc20(context: ContextTypes.DEFAULT_TYPE):
-    """فحص تحويلات USDT TRC20 آلياً عبر شبكة TronGrid بمرور الوقت"""
-    if not USDT_TRC20_WALLET or USDT_TRC20_WALLET.startswith("ضع_"):
-        return
-
-    # استعلام عن تحويلات عقد USDT على TRC20
     url = f"https://api.trongrid.io/v1/accounts/{USDT_TRC20_WALLET}/transactions/trc20?contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t&limit=15"
     try:
         res = requests.get(url, timeout=10)
@@ -175,13 +163,11 @@ async def auto_check_usdt_trc20(context: ContextTypes.DEFAULT_TYPE):
         for tx in data:
             tx_hash = tx.get("transaction_id")
             to_addr = tx.get("to")
-            value_raw = float(tx.get("value", 0)) / 1e6  # USDT يحتوي على 6 خانات عشرية
+            value_raw = float(tx.get("value", 0)) / 1e6
 
-            # التحقق مما إذا كان التحويل للمحفظة ولم يتم معالجته
             if to_addr == USDT_TRC20_WALLET and tx_hash:
                 cursor.execute("SELECT tx_hash FROM processed_txs WHERE tx_hash = ?", (tx_hash,))
                 if not cursor.fetchone():
-                    # مطابقة القيمة مع الباقات (مثال: 2.0 USDT أو 3.0 USDT أو 5.0 USDT)
                     added_credits = 0
                     if value_raw >= 4.9:
                         added_credits = 40
@@ -194,19 +180,16 @@ async def auto_check_usdt_trc20(context: ContextTypes.DEFAULT_TYPE):
                         cursor.execute("INSERT INTO processed_txs VALUES (?)", (tx_hash,))
                         conn.commit()
                         
-                        # إشعار الآدمن وتأكيد المعاملة
-                        if ADMIN_ID != 0:
-                            await context.bot.send_message(
-                                chat_id=ADMIN_ID,
-                                text=f"💰 **تم استلام دفع USDT TRC20 جديد!**\nالمبلغ: {value_raw} USDT\nالعملية: `{tx_hash}`",
-                                parse_mode="Markdown"
-                            )
+                        await context.bot.send_message(
+                            chat_id=ADMIN_ID,
+                            text=f"💰 **تم استلام دفع USDT TRC20 جديد!**\nالمبلغ: {value_raw} USDT\nالعملية: `{tx_hash}`",
+                            parse_mode="Markdown"
+                        )
         conn.close()
     except Exception as e:
         logging.error(f"TRC20 Checker Error: {e}")
 
 async def auto_retargeting_job(context: ContextTypes.DEFAULT_TYPE):
-    """إرسال عروض تسويقية أوتوماتيكية للمستخدمين الذين استهلكوا رصيدهم"""
     zero_users = get_zero_credit_users()
     keyboard = [
         [InlineKeyboardButton("🛒 استعراض الكتالوج والمنتجات", callback_data="view_catalog")],
@@ -216,7 +199,7 @@ async def auto_retargeting_job(context: ContextTypes.DEFAULT_TYPE):
     promo_text = (
         "🔥 **عرض خاص أوتوماتيكي!**\n\n"
         "أنفقت محاولاتك المجانية؟ اشحن حسابك الآن بـ **Telegram Stars** أو **USDT TRC20** "
-        "واحصل على رصيد إضافي مضاعف لتوليد الحملات التسويقية والسكريبتات الإعلانية فوراً!"
+        "واحصل على رصيد إضافي مضاعف لتوليد الحملات التسويقية فوراً!"
     )
     for uid in zero_users:
         try:
@@ -224,12 +207,11 @@ async def auto_retargeting_job(context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             pass
 
-# ==================== معالجات الأوامر والتفاعل ====================
+# ==================== معالجة الأوامر والإنترفيس ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user = get_user(user_id)
 
-    # معالجة نظام الإحالات التلقائي
     if user['is_new'] and context.args and context.args[0].isdigit():
         referrer_id = int(context.args[0])
         if referrer_id != user_id:
@@ -374,9 +356,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         rem = get_user(user_id)['credits']
         await wait_msg.edit_text(f"{ai_res}\n\n---\n🎯 *المتبقي في رصيدك: {rem} محاولات.*", parse_mode="Markdown")
 
-# ==================== لوحة الآدمن للتسويق المباشر ====================
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID or ADMIN_ID == 0:
+    if update.effective_user.id != ADMIN_ID:
         return
     msg = " ".join(context.args)
     if not msg:
@@ -393,7 +374,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"✅ تم البث بنجاح إلى {sent} مستخدم.")
 
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID or ADMIN_ID == 0:
+    if update.effective_user.id != ADMIN_ID:
         return
     users = get_all_users()
     zero_users = get_zero_credit_users()
@@ -405,23 +386,18 @@ async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="Markdown"
     )
 
-# ==================== التشغيل والجدولة ====================
+# ==================== التشغيل الرئيسي ====================
 def main():
     init_db()
     threading.Thread(target=run_flask, daemon=True).start()
 
-    if not BOT_TOKEN or not GEMINI_API_KEY:
-        raise RuntimeError("مفاتيح TELEGRAM_BOT_TOKEN و GEMINI_API_KEY مطلوبة للتشغيل.")
-
     app_bot = Application.builder().token(BOT_TOKEN).build()
 
-    # المهام الأوتوماتيكية المجدولة
     job_queue = app_bot.job_queue
     if job_queue:
-        job_queue.run_repeating(auto_check_usdt_trc20, interval=60, first=10)   # فحص USDT TRC20 كل 60 ثانية
-        job_queue.run_repeating(auto_retargeting_job, interval=86400, first=3600) # التسويق والتذكير التلقائي كل 24 ساعة
+        job_queue.run_repeating(auto_check_usdt_trc20, interval=60, first=10)
+        job_queue.run_repeating(auto_retargeting_job, interval=86400, first=3600)
 
-    # التسجيل
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CommandHandler("broadcast", broadcast))
     app_bot.add_handler(CommandHandler("stats", stats))
@@ -430,7 +406,7 @@ def main():
     app_bot.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    print("🚀 الوكيل الخارق جاهز ويعمل باستقلالية كاملة 100%...")
+    print("🚀 الوكيل الخارق يعمل بنجاح 100%...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
