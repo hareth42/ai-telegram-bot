@@ -19,7 +19,10 @@ from telegram.ext import (
 BOT_TOKEN = os.environ.get(8322155608:AAGFScpl0iuk726FmDsFykxmIq63lb9mXB4)
 GEMINI_API_KEY = os.environ.get(AQ.Ab8RN6LocdZ7m93THCJUoa7492VWIbn1MoXCfdgrDMTj0t4ZMw)
 TON_WALLET_ADDRESS = os.environ.get(UQBQWnjoB021NjvkMF61DuDfcY7-rvAonOep9X45694G7L6l)
-ADMIN_ID = int(os.environ.get(523589053))  # معرفك في تلغرام لصلاحيات الإدارة
+try:
+    ADMIN_ID = int(os.environ.get(523589053))
+except ValueError:
+    ADMIN_ID = 0# معرفك في تلغرام لصلاحيات الإدارة
 
 logging.basicConfig(level=logging.INFO)
 
