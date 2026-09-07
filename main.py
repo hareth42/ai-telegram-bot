@@ -134,19 +134,26 @@ PRODUCTS = {
 }
 
 def generate_ai_response(prompt):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     system_instruction = (
         "أنت الوكيل الذكي الخارق لتسويق المنتجات وتوليد النصوص الإعلانية. "
         "قدم استجابات تسويقية واحترافية عالية الجودة باللغة العربية، موجهة لزيادة المبيعات والتحويل."
     )
-    payload = {"contents": [{"parts": [{"text": f"{system_instruction}\n\nطلب العميل: {prompt}"}]}]}
+    payload = {
+        "contents": [{
+            "parts": [{"text": f"{system_instruction}\n\nطلب العميل: {prompt}"}]
+        }]
+    }
     try:
         res = requests.post(url, json=payload, timeout=20)
-        if res.status_code == 200:
-            return res.json()['candidates'][0]['content']['parts'][0]['text']
-        return f"عذراً، حدث خطأ أثناء الاتصال بالذكاء الاصطناعي (كود: {res.status_code})."
-    except Exception:
-        return "حدث خطأ في الاتصال بالسيرفر، يرجى المحاولة لاحقاً."
+        data = res.json()
+        if res.status_code == 200 and 'candidates' in data and len(data['candidates']) > 0:
+            return True, data['candidates'][0]['content']['parts'][0]['text']
+        else:
+            err_msg = data.get("error", {}).get("message", f"كود الاستجابة: {res.status_code}")
+            return False, f"⚠️ خطأ في API الذكاء الاصطناعي: {err_msg}"
+    except Exception as e:
+        return False, f"⚠️ خطأ في الاتصال بالخادم: {str(e)}"
 
 # ==================== الأتمتة المالية (USDT TRC20 Auto-Checker) ====================
 async def auto_check_usdt_trc20(context: ContextTypes.DEFAULT_TYPE):
@@ -350,11 +357,17 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    if deduct_credit(user_id):
-        wait_msg = await update.message.reply_text("⏳ جاري توليد المحتوى والتنفيذ بالذكاء الاصطناعي...")
-        ai_res = generate_ai_response(update.message.text)
+    wait_msg = await update.message.reply_text("⏳ جاري توليد المحتوى والتنفيذ بالذكاء الاصطناعي...")
+    
+    success, ai_res = generate_ai_response(update.message.text)
+    
+    if success:
+        deduct_credit(user_id)
         rem = get_user(user_id)['credits']
         await wait_msg.edit_text(f"{ai_res}\n\n---\n🎯 *المتبقي في رصيدك: {rem} محاولات.*", parse_mode="Markdown")
+    else:
+        rem = user['credits']
+        await wait_msg.edit_text(f"{ai_res}\n\n---\n🛡️ *لم يتم خصم أي نقطة. رصيدك الحالي: {rem} محاولات.*", parse_mode="Markdown")
 
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
