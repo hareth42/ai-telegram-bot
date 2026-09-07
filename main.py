@@ -15,23 +15,25 @@ from telegram.ext import (
     ContextTypes
 )
 
-# ==================== الإعدادات والأسرار ====================
+# ==================== الإعدادات المتغيرات ====================
 BOT_TOKEN = os.environ.get(8322155608:AAGFScpl0iuk726FmDsFykxmIq63lb9mXB4)
 GEMINI_API_KEY = os.environ.get(AQ.Ab8RN6LocdZ7m93THCJUoa7492VWIbn1MoXCfdgrDMTj0t4ZMw)
-TON_WALLET_ADDRESS = os.environ.get(UQBQWnjoB021NjvkMF61DuDfcY7-rvAonOep9X45694G7L6l)
+USDT_TRC20_WALLET = os.environ.get(TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX)
+
+# تحويل آمن لـ ADMIN_ID لمنع أي توقف للمشروع
 try:
     ADMIN_ID = int(os.environ.get(523589053))
 except ValueError:
-    ADMIN_ID = 0 # معرفك في تلغرام لصلاحيات الإدارة
+    ADMIN_ID = 0
 
 logging.basicConfig(level=logging.INFO)
 
-# ==================== سيرفر ويب للتشغيل المستمر (24/7) ====================
+# ==================== سيرفر WEB للتشغيل 24/7 على Render ====================
 app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return "Bot Status: 100% Autonomous & Operational!"
+    return "🚀 Autonomous Super Agent is Online 24/7!"
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
@@ -111,72 +113,110 @@ def get_zero_credit_users():
     conn.close()
     return users
 
-# ==================== الذكاء الاصطناعي (Gemini 2.0) ====================
+# ==================== كتالوج المنتجات الجاهزة والذكاء الاصطناعي ====================
+PRODUCTS = {
+    "prod_ads": {
+        "title": "⚡ حزمة كتابة الإعلانات المحترفة (Ad & Content AI)",
+        "desc": "صياغة إعلانات فيروسية، وصف منتجات مخصص لزيادة مبيعات المتاجر، وهاشتاجات مستهدفة.",
+        "credits": 15,
+        "stars": 15,
+        "usdt": 2.0
+    },
+    "prod_ecom": {
+        "title": "🛍️ حقيبة تحسين المتاجر وAmazon SEO",
+        "desc": "تحليل الكلمات المفتاحية، صياغة قوائم المنتجات، وكتابة عناوين متوافقة مع محركات البحث.",
+        "credits": 25,
+        "stars": 25,
+        "usdt": 3.0
+    },
+    "prod_agri": {
+        "title": "🌱 دليل واستشارات الري الذكي والتسويق الزراعي",
+        "desc": "خطط تسويق المعدات الزراعية، أنظمة الري بالرش والمؤقتات الرقمية، واستهداف الأسواق الخليجية.",
+        "credits": 40,
+        "stars": 40,
+        "usdt": 5.0
+    }
+}
+
 def generate_ai_response(prompt):
     if not GEMINI_API_KEY:
         return "خطأ: لم يتم ضبط مفتاح GEMINI_API_KEY."
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
-    system_instruction = "أنت مساعد تسويقي محترف وخبير إعلانات. اكتب نصوصاً إعلانية ووصف منتجات جذاباً باللغة العربية."
+    system_instruction = (
+        "أنت الوكيل الذكي الخارق لتسويق المنتجات وتوليد النصوص الإعلانية. "
+        "قدم استجابات تسويقية واحترافية عالية الجودة باللغة العربية، موجهة لزيادة المبيعات والتحويل."
+    )
     payload = {"contents": [{"parts": [{"text": f"{system_instruction}\n\nطلب العميل: {prompt}"}]}]}
     try:
         res = requests.post(url, json=payload, timeout=20)
         if res.status_code == 200:
             return res.json()['candidates'][0]['content']['parts'][0]['text']
-        return f"عذراً، حدث خطأ أثناء إعداد النص (رمز الخطأ: {res.status_code})."
+        return f"عذراً، حدث خطأ أثناء الاتصال بالذكاء الاصطناعي (كود: {res.status_code})."
     except Exception as e:
-        return "عذراً، حدث خطأ أثناء الاتصال بالذكاء الاصطناعي."
+        return "حدث خطأ في الاتصال بالسيرفر، يرجى المحاولة لاحقاً."
 
-# ==================== المهام التلقائية (TON Checker & Retargeting) ====================
-async def auto_check_ton_payments(context: ContextTypes.DEFAULT_TYPE):
-    """فحص تحويلات شبكة TON وتأكيدها آلياً بدون تدخل بشري"""
-    if not TON_WALLET_ADDRESS or TON_WALLET_ADDRESS.startswith("ضع_"):
+# ==================== الأتمتة المالية (USDT TRC20 Auto-Checker) ====================
+async def auto_check_usdt_trc20(context: ContextTypes.DEFAULT_TYPE):
+    """فحص تحويلات USDT TRC20 آلياً عبر شبكة TronGrid بمرور الوقت"""
+    if not USDT_TRC20_WALLET or USDT_TRC20_WALLET.startswith("ضع_"):
         return
-    url = f"https://toncenter.com/api/v2/getTransactions?address={TON_WALLET_ADDRESS}&limit=10"
+
+    # استعلام عن تحويلات عقد USDT على TRC20
+    url = f"https://api.trongrid.io/v1/accounts/{USDT_TRC20_WALLET}/transactions/trc20?contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t&limit=15"
     try:
         res = requests.get(url, timeout=10)
         if res.status_code != 200:
             return
-        txs = res.json().get("result", [])
+        data = res.json().get("data", [])
+        
         conn = sqlite3.connect("bot_database.db")
         cursor = conn.cursor()
 
-        for tx in txs:
-            tx_hash = tx.get("transaction_id", {}).get("hash")
-            in_msg = tx.get("in_msg", {})
-            value = int(in_msg.get("value", 0)) / 1e9  # التحويل لـ TON
-            comment = in_msg.get("message", "").strip()
+        for tx in data:
+            tx_hash = tx.get("transaction_id")
+            to_addr = tx.get("to")
+            value_raw = float(tx.get("value", 0)) / 1e6  # USDT يحتوي على 6 خانات عشرية
 
-            if tx_hash and comment.isdigit() and value >= 0.4:
+            # التحقق مما إذا كان التحويل للمحفظة ولم يتم معالجته
+            if to_addr == USDT_TRC20_WALLET and tx_hash:
                 cursor.execute("SELECT tx_hash FROM processed_txs WHERE tx_hash = ?", (tx_hash,))
                 if not cursor.fetchone():
-                    user_id = int(comment)
-                    cursor.execute("INSERT INTO processed_txs VALUES (?)", (tx_hash,))
-                    conn.commit()
-                    add_credits(user_id, 20)
-                    try:
-                        await context.bot.send_message(
-                            chat_id=user_id,
-                            text="🎉 **تم تأكيد دفع عملة TON بنجاح!**\nتم إضافة **20 محاولة جديدة** إلى حسابك تلقائياً.",
-                            parse_mode="Markdown"
-                        )
-                    except Exception:
-                        pass
+                    # مطابقة القيمة مع الباقات (مثال: 2.0 USDT أو 3.0 USDT أو 5.0 USDT)
+                    added_credits = 0
+                    if value_raw >= 4.9:
+                        added_credits = 40
+                    elif value_raw >= 2.9:
+                        added_credits = 25
+                    elif value_raw >= 1.9:
+                        added_credits = 15
+
+                    if added_credits > 0:
+                        cursor.execute("INSERT INTO processed_txs VALUES (?)", (tx_hash,))
+                        conn.commit()
+                        
+                        # إشعار الآدمن وتأكيد المعاملة
+                        if ADMIN_ID != 0:
+                            await context.bot.send_message(
+                                chat_id=ADMIN_ID,
+                                text=f"💰 **تم استلام دفع USDT TRC20 جديد!**\nالمبلغ: {value_raw} USDT\nالعملية: `{tx_hash}`",
+                                parse_mode="Markdown"
+                            )
         conn.close()
     except Exception as e:
-        logging.error(f"TON Checker Error: {e}")
+        logging.error(f"TRC20 Checker Error: {e}")
 
 async def auto_retargeting_job(context: ContextTypes.DEFAULT_TYPE):
-    """إرسال عروض تسويقية أوتوماتيكية للعملاء الذين انتهى رصيدهم"""
+    """إرسال عروض تسويقية أوتوماتيكية للمستخدمين الذين استهلكوا رصيدهم"""
     zero_users = get_zero_credit_users()
     keyboard = [
-        [InlineKeyboardButton("⭐ شحن الرصيد بالنجوم (خصم 50%)", callback_data="buy_stars")],
-        [InlineKeyboardButton("🔗 الحصول على محاولات مجانية", callback_data="my_credits")]
+        [InlineKeyboardButton("🛒 استعراض الكتالوج والمنتجات", callback_data="view_catalog")],
+        [InlineKeyboardButton("⭐ شحن مباشر بالنجوم", callback_data="buy_stars_menu")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     promo_text = (
-        "🔥 **عرض خاص ومؤقت!**\n\n"
-        "لاحظنا أن رصيدك المجاني قد انتهى. اشحن حسابك الآن بنجوم تلغرام واحصل على ضعف المحاولات، "
-        "أو شارك رابط الإحالة الخاص بك مع أصدقائك للحصول على 5 محاولات مجانية لكل شخص ينضم!"
+        "🔥 **عرض خاص أوتوماتيكي!**\n\n"
+        "أنفقت محاولاتك المجانية؟ اشحن حسابك الآن بـ **Telegram Stars** أو **USDT TRC20** "
+        "واحصل على رصيد إضافي مضاعف لتوليد الحملات التسويقية والسكريبتات الإعلانية فوراً!"
     )
     for uid in zero_users:
         try:
@@ -184,12 +224,12 @@ async def auto_retargeting_job(context: ContextTypes.DEFAULT_TYPE):
         except Exception:
             pass
 
-# ==================== الأوامر والوظائف ====================
+# ==================== معالجات الأوامر والتفاعل ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     user = get_user(user_id)
 
-    # معالجة نظام الإحالة التلقائي
+    # معالجة نظام الإحالات التلقائي
     if user['is_new'] and context.args and context.args[0].isdigit():
         referrer_id = int(context.args[0])
         if referrer_id != user_id:
@@ -197,7 +237,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             try:
                 await context.bot.send_message(
                     chat_id=referrer_id,
-                    text=f"🎉 **انضم صديق جديد عبر رابطك!**\nتم شحن **5 محاولات مجانية** في حسابك تلقائياً.",
+                    text="🎉 **انضم مستخدم جديد عبر رابطك!**\nتم إضافة 5 محاولات مجانية لحسابك أوتوماتيكياً.",
                     parse_mode="Markdown"
                 )
             except Exception:
@@ -207,17 +247,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     referral_link = f"https://t.me/{bot_info.username}?start={user_id}"
 
     keyboard = [
-        [InlineKeyboardButton("⭐ شراء رصيد (نجوم تلغرام)", callback_data="buy_stars")],
-        [InlineKeyboardButton("💎 شراء رصيد (عملة TON)", callback_data="buy_ton")],
-        [InlineKeyboardButton("📊 رصيدي ورابط الإحالة", callback_data="my_credits")]
+        [InlineKeyboardButton("🛍️ المنتجات والباقات المتاحة", callback_data="view_catalog")],
+        [InlineKeyboardButton("⭐ الشحن عبر نجوم تلغرام", callback_data="buy_stars_menu")],
+        [InlineKeyboardButton("💎 الشحن بـ USDT TRC20", callback_data="buy_usdt_menu")],
+        [InlineKeyboardButton("📊 حسابي ورابط الإحالة", callback_data="my_account")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     welcome_text = (
-        f"مرحباً بك في الوكيل الذكي لكتابة المحتوى الإعلاني! 🤖\n\n"
-        f"🎁 **رصيدك الحالي:** {user['credits']} محاولات.\n\n"
-        f"🔗 **رابط الإحالة التلقائي الخاص بك:**\n`{referral_link}`\n"
-        f"(احصل على 5 محاولات مجانية تلقائياً عن كل شخص ينضم عبر رابطك)"
+        f"مرحباً بك في **الوكيل الذكي الخارق للتسويق والبيع الأوتوماتيكي** 🚀\n\n"
+        f"🎁 **رصيدك الحالي:** {user['credits']} محاولات مجانية.\n\n"
+        f"🔗 **رابط التسويق بالإحالة الخاص بك:**\n`{referral_link}`\n"
+        f"(تحصل على 5 محاولات مجانية فوراً لكل شخص يسجل من خلالك)"
     )
     await update.message.reply_text(welcome_text, reply_markup=reply_markup, parse_mode="Markdown")
 
@@ -226,43 +267,90 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await query.answer()
     user_id = query.from_user.id
 
-    if query.data == "my_credits":
+    if query.data == "view_catalog":
+        text = "🛍️ **كتالوج المنتجات والخدمات المطلوبة في السوق:**\n\n"
+        keyboard = []
+        for p_id, p_info in PRODUCTS.items():
+            text += f"▪️ **{p_info['title']}**\n{p_info['desc']}\nالسعر: {p_info['stars']} نجمة أو {p_info['usdt']} USDT\n\n"
+            keyboard.append([InlineKeyboardButton(f"شراء: {p_info['title']}", callback_data=f"buy_prod_{p_id}")])
+        keyboard.append([InlineKeyboardButton("🔙 القائمة الرئيسية", callback_data="main_menu")])
+        await query.message.reply_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+
+    elif query.data.startswith("buy_prod_"):
+        p_id = query.data.replace("buy_prod_", "")
+        p_info = PRODUCTS.get(p_id)
+        if p_info:
+            keyboard = [
+                [InlineKeyboardButton(f"⭐ دفع {p_info['stars']} نجمة", callback_data=f"pay_stars_{p_id}")],
+                [InlineKeyboardButton(f"💎 دفع {p_info['usdt']} USDT (TRC20)", callback_data=f"pay_usdt_{p_id}")],
+                [InlineKeyboardButton("🔙 الكتالوج", callback_data="view_catalog")]
+            ]
+            await query.message.reply_text(
+                f"اختر طريقة الدفع المناسبة لشراء:\n**{p_info['title']}**",
+                reply_markup=InlineKeyboardMarkup(keyboard),
+                parse_mode="Markdown"
+            )
+
+    elif query.data.startswith("pay_stars_") or query.data == "buy_stars_menu":
+        amount = 15
+        payload = f"stars_purchase_{user_id}"
+        if query.data.startswith("pay_stars_"):
+            p_id = query.data.replace("pay_stars_", "")
+            amount = PRODUCTS[p_id]["stars"]
+            payload = f"stars_prod_{p_id}_{user_id}"
+
+        await context.bot.send_invoice(
+            chat_id=query.message.chat_id,
+            title="شراء رصيد عبر نجوم تلغرام",
+            description="شحن أوتوماتيكي ومباشر للرصيد والمحاولات.",
+            payload=payload,
+            provider_token="",
+            currency="XTR",
+            prices=[LabeledPrice("شراء محاولات", amount)]
+        )
+
+    elif query.data.startswith("pay_usdt_") or query.data == "buy_usdt_menu":
+        text = (
+            f"💎 **الدفع التلقائي عبر عملة USDT (شبكة TRC20):**\n\n"
+            f"يرجى تحويل المبلغ المطلوب إلى عنوان المحفظة التالي:\n\n"
+            f"`{USDT_TRC20_WALLET}`\n\n"
+            f"⚡ **ملاحظة:** يتم فحص الشبكة وتأكيد الشحن أوتوماتيكياً عبر الخادم فور وصول التحويل."
+        )
+        await query.message.reply_text(text, parse_mode="Markdown")
+
+    elif query.data == "my_account":
         user = get_user(user_id)
         bot_info = await context.bot.get_me()
         ref_link = f"https://t.me/{bot_info.username}?start={user_id}"
         await query.message.reply_text(
-            f"📊 **حالة حسابك:**\n\n• الرصيد المتبقي: **{user['credits']}** محاولات.\n"
-            f"• عدد الإحالات: **{user['referrals']}** أصدقاء.\n\n"
-            f"🔗 رابط الدعوة الخاص بك:\n`{ref_link}`",
+            f"📊 **تفاصيل حسابك:**\n\n"
+            f"• الرصيد المتبقي: **{user['credits']}** محاولات.\n"
+            f"• الإحالات الناجحة: **{user['referrals']}** أصدقاء.\n\n"
+            f"🔗 رابط الدعوة للتسويق الفيروسي:\n`{ref_link}`",
             parse_mode="Markdown"
         )
 
-    elif query.data == "buy_stars":
-        await context.bot.send_invoice(
-            chat_id=query.message.chat_id,
-            title="شراء 10 محاولات تسويقية",
-            description="شحن فورى وذاتي لـ 10 محاولات ذكاء اصطناعي.",
-            payload=f"stars_10_{user_id}",
-            provider_token="",
-            currency="XTR",
-            prices=[LabeledPrice("10 محاولات", 10)]
-        )
-
-    elif query.data == "buy_ton":
-        text = (
-            f"💎 **الشراء التلقائي عبر عملة TON:**\n\n"
-            f"أرسل **0.5 TON** إلى العنوان التالي:\n`{TON_WALLET_ADDRESS}`\n\n"
-            f"⚠️ **مهم جداً:** ضع رقم حسابك هذا في خانة (Memo/Comment) ليصلك الشحن فوراً تلقائياً:\n`{user_id}`"
-        )
-        await query.message.reply_text(text, parse_mode="Markdown")
+    elif query.data == "main_menu":
+        await start(update, context)
 
 async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.pre_checkout_query.answer(ok=True)
 
 async def successful_payment_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    add_credits(user_id, 10)
-    await update.message.reply_text("🎉 **تم الشحن بنجاح عبر نجوم تلغرام!**\nتمت إضافة 10 محاولات إلى حسابك.", parse_mode="Markdown")
+    payload = update.message.successful_payment.invoice_payload
+    
+    credits_to_add = 15
+    if "prod_ecom" in payload:
+        credits_to_add = 25
+    elif "prod_agri" in payload:
+        credits_to_add = 40
+
+    add_credits(user_id, credits_to_add)
+    await update.message.reply_text(
+        f"🎉 **تم الدفع بنجاح عبر نجوم تلغرام!**\nتم إضافة **{credits_to_add} محاولة** إلى حسابك تلقائياً.",
+        parse_mode="Markdown"
+    )
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -270,66 +358,70 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if user['credits'] <= 0:
         keyboard = [
-            [InlineKeyboardButton("⭐ شراء رصيد بالنجوم", callback_data="buy_stars")],
-            [InlineKeyboardButton("💎 شراء رصيد بـ TON", callback_data="buy_ton")]
+            [InlineKeyboardButton("🛍️ شراء منتج / باقة جديدة", callback_data="view_catalog")],
+            [InlineKeyboardButton("⭐ شحن بنجوم تلغرام", callback_data="buy_stars_menu")]
         ]
-        await update.message.reply_text("❌ **نفد رصيدك!** اشحن حسابك الآن للاستمرار:", reply_markup=InlineKeyboardMarkup(keyboard), parse_mode="Markdown")
+        await update.message.reply_text(
+            "❌ **نفد رصيد المحاولات الخاص بك!**\nاشحن حسابك للوصول للخدمات والذكاء الاصطناعي:",
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
         return
 
     if deduct_credit(user_id):
-        wait_msg = await update.message.reply_text("⏳ جاري صياغة المحتوى...")
-        ai_response = generate_ai_response(update.message.text)
+        wait_msg = await update.message.reply_text("⏳ جاري توليد المحتوى والتنفيذ بالذكاء الاصطناعي...")
+        ai_res = generate_ai_response(update.message.text)
         rem = get_user(user_id)['credits']
-        await wait_msg.edit_text(f"{ai_response}\n\n---\n🎯 *المتبقي في رصيدك: {rem} محاولات.*", parse_mode="Markdown")
+        await wait_msg.edit_text(f"{ai_res}\n\n---\n🎯 *المتبقي في رصيدك: {rem} محاولات.*", parse_mode="Markdown")
 
-# ==================== لوحة التحكم الخاصة بالآدمن ====================
+# ==================== لوحة الآدمن للتسويق المباشر ====================
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID:
+    if update.effective_user.id != ADMIN_ID or ADMIN_ID == 0:
         return
     msg = " ".join(context.args)
     if not msg:
-        await update.message.reply_text("يرجى كتابة الرسالة بعد الأمر. مثال:\n`/broadcast عرض خاص اليوم!`", parse_mode="Markdown")
+        await update.message.reply_text("اكتب الرسالة بعد الأمر: `/broadcast رسالتك التسويقية`", parse_mode="Markdown")
         return
     users = get_all_users()
-    count = 0
+    sent = 0
     for uid in users:
         try:
             await context.bot.send_message(chat_id=uid, text=msg, parse_mode="Markdown")
-            count += 1
+            sent += 1
         except Exception:
             pass
-    await update.message.reply_text(f"✅ تم إرسال الإعلان التلقائي إلى {count} مستخدم.")
+    await update.message.reply_text(f"✅ تم البث بنجاح إلى {sent} مستخدم.")
 
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != ADMIN_ID:
+    if update.effective_user.id != ADMIN_ID or ADMIN_ID == 0:
         return
     users = get_all_users()
     zero_users = get_zero_credit_users()
     await update.message.reply_text(
-        f"📊 **إحصائيات البوت الحالية:**\n\n"
-        f"• إجمالي المشتركين: **{len(users)}**\n"
-        f"• المستخدمين بدون رصيد: **{len(zero_users)}**\n"
+        f"📊 **إحصائيات الوكيل الخارق:**\n\n"
+        f"• المستخدمين الكليين: **{len(users)}**\n"
+        f"• المستهلكين كامل رصيدهم: **{len(zero_users)}**\n"
         f"• المستخدمين النشطين: **{len(users) - len(zero_users)}**",
         parse_mode="Markdown"
     )
 
-# ==================== التشغيل الرئيسي والجدولة ====================
+# ==================== التشغيل والجدولة ====================
 def main():
     init_db()
     threading.Thread(target=run_flask, daemon=True).start()
 
     if not BOT_TOKEN or not GEMINI_API_KEY:
-        raise RuntimeError("يرجى التأكد من ضبط مفاتيح البيئة TELEGRAM_BOT_TOKEN و GEMINI_API_KEY.")
+        raise RuntimeError("مفاتيح TELEGRAM_BOT_TOKEN و GEMINI_API_KEY مطلوبة للتشغيل.")
 
     app_bot = Application.builder().token(BOT_TOKEN).build()
 
-    # إضافة المهام المجدولة للتسويق الآلي وفحص شبكة TON
+    # المهام الأوتوماتيكية المجدولة
     job_queue = app_bot.job_queue
     if job_queue:
-        job_queue.run_repeating(auto_check_ton_payments, interval=60, first=10) # فحص TON كل دقيقة
-        job_queue.run_repeating(auto_retargeting_job, interval=86400, first=3600) # التسويق الآلي كل 24 ساعة
+        job_queue.run_repeating(auto_check_usdt_trc20, interval=60, first=10)   # فحص USDT TRC20 كل 60 ثانية
+        job_queue.run_repeating(auto_retargeting_job, interval=86400, first=3600) # التسويق والتذكير التلقائي كل 24 ساعة
 
-    # المسجلات الأوامر
+    # التسجيل
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CommandHandler("broadcast", broadcast))
     app_bot.add_handler(CommandHandler("stats", stats))
@@ -338,7 +430,7 @@ def main():
     app_bot.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    print("🤖 الوكيل الذكي يعمل بكامل طاقته وأتمتته 100%...")
+    print("🚀 الوكيل الخارق جاهز ويعمل باستقلالية كاملة 100%...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
