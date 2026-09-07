@@ -15,10 +15,11 @@ from telegram.ext import (
     ContextTypes
 )
 
-# ==================== الإعدادات المتغيرات ====================
+# ==================== الإعدادات والمتغيرات ====================
 BOT_TOKEN = "8322155608:AAGFScp10iuk726FmDsFykxmIq631b9mXB4"
 GEMINI_API_KEY = "AQ.Ab8RN6LoodZ7m93THCJUoa7492VWIbn1MoXCfdgzDNTj0t4ZMm"
 USDT_TRC20_WALLET = "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX"
+ADMIN_ID = 523589053
 # تحويل آمن لـ ADMIN_ID لمنع أي توقف للمشروع
 try:
     ADMIN_ID = int(os.environ.get(523589053))
