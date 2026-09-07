@@ -17,7 +17,7 @@ from telegram.ext import (
 
 # ==================== الإعدادات المتغيرات ====================
 BOT_TOKEN = "8322155608:AAGFScp10iuk726FmDsFykxmIq631b9mXB4"
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_API_KEY = "AQ.Ab8RN6LoodZ7m93THCJUoa7492VWIbn1MoXCfdgzDNTj0t4ZMm"
 USDT_TRC20_WALLET = os.environ.get(TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX)
 
 # تحويل آمن لـ ADMIN_ID لمنع أي توقف للمشروع
