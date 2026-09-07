@@ -16,9 +16,9 @@ from telegram.ext import (
 )
 
 # ==================== الإعدادات الثابتة والصحيحة ====================
-BOT_TOKEN = "8322155608:AAFKwhOH5xK5mY2t2gASK175VhPBitk-mJo"
-GEMINI_API_KEY = "AQ.Ab8RN6LJZH5uY_-3KWMlyis3gXUyrugBsV0e866peA30LjeYWg"
-USDT_TRC20_WALLET = "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX"
+BOT_TOKEN = "8322155608:AAFKwhOH5xK5mY2t2gASK175VhPBitk-mJo".strip()
+GEMINI_API_KEY = "AQ.Ab8RN6LJZH5uY_-3KWMlyis3gXUyrugBsV0e866peA30LjeYWg".strip()
+USDT_TRC20_WALLET = "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX".strip()
 ADMIN_ID = 523589053
 
 logging.basicConfig(level=logging.INFO)
@@ -108,7 +108,7 @@ def get_zero_credit_users():
     conn.close()
     return users
 
-# ==================== كتالوج المنتجات الذكية ====================
+# ==================== كتالوج المنتجات ====================
 PRODUCTS = {
     "prod_ads": {
         "title": "⚡ حزمة كتابة الإعلانات المحترفة (Ad & Content AI)",
