@@ -1,4 +1,2 @@
-python-telegram-bot[job-queue]
-APScheduler
-flask
-requests
+google-generative-ai
+python-telegram-bot
