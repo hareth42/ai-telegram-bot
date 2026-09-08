@@ -16,7 +16,7 @@ from telegram.ext import (
 )
 
 # ==================== استقبال البيانات من متغيرات البيئة أو القيم المباشرة ====================
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8322155608:AAFKwhOH5xK5mY2t2gASK175VhPBitk-mJo")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8322155608:AAGet4B90AjDjntI5E-sz9f4od3ud_x2Vdo")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LJZH5uY_-3KWMlyis3gXUyruGbSv0e866peA30LjeYWg")
 USDT_WALLET_ADDRESS = os.environ.get("USDT_WALLET_ADDRESS", "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX")
 TRONGRID_API_KEY = os.environ.get("TRONGRID_API_KEY", "bd404b0a-d24b-403c-9921-e1309111f04a")
