@@ -15,10 +15,10 @@ from telegram.ext import (
     ContextTypes
 )
 
-# ==================== ضع بياناتك هنا ====================
-BOT_TOKEN = "8322155608:AAFKwhOH5xK5mY2t2gASK175VhPBitk-mJo"
-GEMINI_API_KEY = "AQ.Ab8RN6LJZH5uY_-3KWMlyis3gXUyruGbSv0e866peA30LjeYWg"
-USDT_WALLET_ADDRESS = "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX"
+# ==================== استقبال البيانات من متغيرات البيئة أو القيم المباشرة ====================
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8322155608:AAFKwhOH5xK5mY2t2gASK175VhPBitk-mJo")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LJZH5uY_-3KWMlyis3gXUyruGbSv0e866peA30LjeYWg")
+USDT_WALLET_ADDRESS = os.environ.get("USDT_WALLET_ADDRESS", "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX")
 
 # ==================== سيرفر ويب لـ UptimeRobot ====================
 app = Flask(__name__)
@@ -115,6 +115,19 @@ def generate_ai_response(prompt, image_bytes=None, mime_type="image/jpeg"):
     
     return "عذراً، حدث خطأ أثناء إعداد المحتوى التسويقي. يرجى المحاولة لاحقاً.\nSorry, an error occurred while generating content."
 
+# دالة مساعدة لإرسال الرسائل بأمان بدون تعطل البوت بسبب Markdown
+async def safe_reply(message, text, reply_markup=None):
+    try:
+        await message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
+    except Exception:
+        await message.reply_text(text, reply_markup=reply_markup)
+
+async def safe_edit(message, text):
+    try:
+        await message.edit_text(text, parse_mode="Markdown")
+    except Exception:
+        await message.edit_text(text)
+
 # ==================== أوامر واجهة تلغرام ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -143,7 +156,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("📦 وصف منتج | Product Description", callback_data="tmpl_product"), InlineKeyboardButton("📅 خطة محتوى | Content Strategy", callback_data="tmpl_strategy")],
         [InlineKeyboardButton("💳 شراء رصيد | Buy Credits", callback_data="buy_credits"), InlineKeyboardButton("📊 رصيدي وحسابي | My Account", callback_data="check_status")]
     ]
-    await update.message.reply_text(welcome_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+    await safe_reply(update.message, welcome_text, reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -159,7 +172,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"2️⃣ مشاركة رابط الإحالة للحصول على **5 نقاط مجانية**:\n`{referral_link}`"
         )
         keyboard = [[InlineKeyboardButton("💳 شراء رصيد الآن | Buy Credits", callback_data="buy_credits")]]
-        await update.message.reply_text(no_credits_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+        await safe_reply(update.message, no_credits_text, reply_markup=InlineKeyboardMarkup(keyboard))
         return
 
     status_msg = await update.message.reply_text("🧠 جاري التفكير وصياغة المحتوى بأعلى معايير التسويق... ⏳")
@@ -168,7 +181,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     update_credits(user_id, -1)
     new_credits = user_data['credits'] - 1
 
-    await status_msg.edit_text(f"{ai_result}\n\n---\n✅ **تم خصم نقطة.** الرصيد المتبقي: {new_credits} محاولات.")
+    full_response = f"{ai_result}\n\n---\n✅ **تم خصم نقطة.** الرصيد المتبقي: {new_credits} محاولات."
+    await safe_edit(status_msg, full_response)
 
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -189,7 +203,8 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     update_credits(user_id, -1)
     new_credits = user_data['credits'] - 1
 
-    await status_msg.edit_text(f"{ai_result}\n\n---\n✅ **تم تحليل الصورة وخصم نقطة.** الرصيد المتبقي: {new_credits}")
+    full_response = f"{ai_result}\n\n---\n✅ **تم تحليل الصورة وخصم نقطة.** الرصيد المتبقي: {new_credits}"
+    await safe_edit(status_msg, full_response)
 
 # ==================== خيارات الدفع ونجوم تلغرام ====================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -206,7 +221,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [InlineKeyboardButton("⭐ شراء بـ 250 نجمة (100 محاولة)", callback_data="buy_stars")],
             [InlineKeyboardButton("💎 شراء عبر USDT", callback_data="buy_usdt")],
         ]
-        await query.message.reply_text(pay_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+        await safe_reply(query.message, pay_text, reply_markup=InlineKeyboardMarkup(keyboard))
 
     elif query.data == "buy_stars":
         chat_id = query.message.chat_id
@@ -232,19 +247,15 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🔹 **100 عملية توليد** = 10 USDT\n"
             "🔹 **300 عملية توليد** = 25 USDT\n\n"
             f"📌 **عنوان المحفظة / Wallet Address:**\n`{USDT_WALLET_ADDRESS}`\n\n"
-            "⚠️ بعد التحويل، اضغط زر التحقق للتحقق من العملية وشحن الحساب تلقائياً."
+            "⚠️ بعد التحويل، يرجى إرسال رقم المعاملة (TXID) أو إشعار الدعم لإضافة النقاط لحسابك."
         )
-        keyboard = [[InlineKeyboardButton("🔄 التحقق من الدفع | Verify Payment", callback_data="verify_payment")]]
-        await query.message.reply_text(pay_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
-
-    elif query.data == "verify_payment":
-        await query.message.reply_text("🔍 جاري التحقق من شبكة Blockchain... إذا تم التحويل سيتم تحديث رصيدك فوراً.")
+        await safe_reply(query.message, pay_text)
 
     elif query.data == "check_status":
         user_id = query.from_user.id
         user_data = get_user(user_id)
         status_text = f"📊 **حالة الحساب / Account Status:**\n\n• الرصيد المتبقي: {user_data['credits']} محاولات.\n• عدد الإحالات الناجحة: {user_data['referrals']} أصدقاء."
-        await query.message.reply_text(status_text, parse_mode="Markdown")
+        await safe_reply(query.message, status_text)
 
     elif query.data.startswith("tmpl_"):
         prompts = {
@@ -254,7 +265,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "tmpl_strategy": "ضع خطة محتوى أسبوعية (7 أيام) لمنصة انستغرام وتيك توك لمتجر متخصص في [اكتب مجال متجرك]."
         }
         chosen_prompt = prompts.get(query.data, "")
-        await query.message.reply_text(f"💡 **تفضل بنسخ هذا القالب وتعديل ما بين القوسين ثم إرساله لي:**\n\n`{chosen_prompt}`", parse_mode="Markdown")
+        await safe_reply(query.message, f"💡 **تفضل بنسخ هذا القالب وتعديل ما بين القوسين ثم إرساله لي:**\n\n`{chosen_prompt}`")
 
 # ==================== معالجة عملية الدفع بالنجوم ====================
 async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -267,7 +278,8 @@ async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYP
 async def successful_payment_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     update_credits(user_id, 100)
-    await update.message.reply_text(
+    await safe_reply(
+        update.message,
         "🎉 **تمت عملية الشراء بنجاح عبر نجوم تلغرام!**\n\n"
         "✅ تمت إضافة **100 نقطة** إلى حسابك آلياً. يمكنك البدء باستغلال الوكيل الذكي الآن!"
     )
