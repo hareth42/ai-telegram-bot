@@ -4,8 +4,16 @@ import threading
 import base64
 import requests
 from flask import Flask
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageHandler,
+    CallbackQueryHandler,
+    PreCheckoutQueryHandler,
+    filters,
+    ContextTypes
+)
 
 # ==================== ضع بياناتك هنا ====================
 BOT_TOKEN = "8322155608:AAFKwhOH5xK5mY2t2gASK175VhPBitk-mJo"
@@ -63,7 +71,7 @@ def update_credits(user_id, amount):
     conn.commit()
     conn.close()
 
-# ==================== محرك الذكاء الاصطناعي الشامل (نصوص + صور) ====================
+# ==================== محرك الذكاء الاصطناعي الشامل ====================
 def generate_ai_response(prompt, image_bytes=None, mime_type="image/jpeg"):
     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     
@@ -105,7 +113,7 @@ def generate_ai_response(prompt, image_bytes=None, mime_type="image/jpeg"):
     except Exception as e:
         print(f"Error calling Gemini: {e}")
     
-    return "عذراً، حدث خطأ أثناء إعداد المحتوى التسويقي. يرجى المحاولة لاحقاً.\nSorry, an error occurred while generating the content. Please try again."
+    return "عذراً، حدث خطأ أثناء إعداد المحتوى التسويقي. يرجى المحاولة لاحقاً.\nSorry, an error occurred while generating content."
 
 # ==================== أوامر واجهة تلغرام ====================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -125,8 +133,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• 🎯 صياغة إعلانات ممولة احترافية (FB / IG / TikTok / Snapchat).\n"
         f"• 🎥 كتابة سيناريو فيديو قصير (Reels / TikTok) مع مشاهد صوتية وبصرية.\n"
         f"• 📦 وصف منتجات يزيد المبيعات للـ E-commerce.\n"
-        f"• 📅 خطط محتوى واستراتيجيات نمو للمتاجر الحسابات.\n"
-        f"• 🖼️ **تحليل صور المنتجات آلياً** (فقط أرسل صورة المنتج مباشرة!).\n\n"
+        f"• 📅 خطط محتوى واستراتيجيات نمو للمتاجر والحسابات.\n"
+        f"• 🖼️ **تحليل صور المنتجات آلياً** (أرسل صورة المنتج مباشرة!).\n\n"
         f"🔗 **رابط الإحالة / Referral Link (احصل على 5 نقاط مجانية لكل صديق):**\n`{referral_link}`"
     )
 
@@ -147,7 +155,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         no_credits_text = (
             "⚠️ **نفد رصيدك الحالي! / Out of Credits!**\n\n"
             "للاستمرار يمكنك:\n"
-            "1️⃣ شراء رصيد جديد عبر USDT.\n"
+            "1️⃣ شراء رصيد جديد بـ Telegram Stars أو USDT.\n"
             f"2️⃣ مشاركة رابط الإحالة للحصول على **5 نقاط مجانية**:\n`{referral_link}`"
         )
         keyboard = [[InlineKeyboardButton("💳 شراء رصيد الآن | Buy Credits", callback_data="buy_credits")]]
@@ -183,13 +191,44 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     await status_msg.edit_text(f"{ai_result}\n\n---\n✅ **تم تحليل الصورة وخصم نقطة.** الرصيد المتبقي: {new_credits}")
 
+# ==================== خيارات الدفع ونجوم تلغرام ====================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
 
     if query.data == "buy_credits":
         pay_text = (
-            "💳 **شراء رصيد الاستخدام / Buy Credits (USDT TRC20):**\n\n"
+            "💳 **اختر طريقة الدفع المناسبة لشحن رصيدك / Select Payment Method:**\n\n"
+            "🌟 **نجوم تلغرام (Telegram Stars):** شحن آلي وسريع من داخل التطبيق.\n"
+            "💎 **USDT (TRC20):** تحويل كريبتو مباشر للمحفظة."
+        )
+        keyboard = [
+            [InlineKeyboardButton("⭐ شراء بـ 250 نجمة (100 محاولة)", callback_data="buy_stars")],
+            [InlineKeyboardButton("💎 شراء عبر USDT", callback_data="buy_usdt")],
+        ]
+        await query.message.reply_text(pay_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(keyboard))
+
+    elif query.data == "buy_stars":
+        chat_id = query.message.chat_id
+        title = "100 محاولة استخدام | 100 Credits"
+        description = "شحن رصيد الوكيل التسويقي الذكي بـ 100 محاولة."
+        payload = "credits_pack_100"
+        currency = "XTR"
+        prices = [LabeledPrice("100 محاولة", 250)]
+
+        await context.bot.send_invoice(
+            chat_id=chat_id,
+            title=title,
+            description=description,
+            payload=payload,
+            provider_token="",
+            currency=currency,
+            prices=prices
+        )
+
+    elif query.data == "buy_usdt":
+        pay_text = (
+            "💳 **شراء رصيد عبر USDT (TRC20):**\n\n"
             "🔹 **100 عملية توليد** = 10 USDT\n"
             "🔹 **300 عملية توليد** = 25 USDT\n\n"
             f"📌 **عنوان المحفظة / Wallet Address:**\n`{USDT_WALLET_ADDRESS}`\n\n"
@@ -217,6 +256,22 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chosen_prompt = prompts.get(query.data, "")
         await query.message.reply_text(f"💡 **تفضل بنسخ هذا القالب وتعديل ما بين القوسين ثم إرساله لي:**\n\n`{chosen_prompt}`", parse_mode="Markdown")
 
+# ==================== معالجة عملية الدفع بالنجوم ====================
+async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    query = update.pre_checkout_query
+    if query.invoice_payload != "credits_pack_100":
+        await query.answer(ok=False, error_message="حدث خطأ في عملية الشراء.")
+    else:
+        await query.answer(ok=True)
+
+async def successful_payment_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    update_credits(user_id, 100)
+    await update.message.reply_text(
+        "🎉 **تمت عملية الشراء بنجاح عبر نجوم تلغرام!**\n\n"
+        "✅ تمت إضافة **100 نقطة** إلى حسابك آلياً. يمكنك البدء باستغلال الوكيل الذكي الآن!"
+    )
+
 # ==================== التشغيل الرئيسي ====================
 def main():
     threading.Thread(target=run_flask, daemon=True).start()
@@ -224,10 +279,12 @@ def main():
     app_bot = Application.builder().token(BOT_TOKEN).build()
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CallbackQueryHandler(button_handler))
+    app_bot.add_handler(PreCheckoutQueryHandler(precheckout_callback))
+    app_bot.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback))
     app_bot.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    print("🤖 الوكيل التسويقي الشامل يعمل بنجاح...")
+    print("🤖 الوكيل التسويقي الشامل يعمل بنجاح مع دعم نجوم تلغرام...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
