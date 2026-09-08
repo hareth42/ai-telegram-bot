@@ -19,7 +19,7 @@ from telegram.ext import (
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8322155608:AAFKwhOH5xK5mY2t2gASK175VhPBitk-mJo")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LJZH5uY_-3KWMlyis3gXUyruGbSv0e866peA30LjeYWg")
 USDT_WALLET_ADDRESS = os.environ.get("USDT_WALLET_ADDRESS", "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX")
-TRONGRID_API_KEY = os.environ.get(bd404b9a-d24b-403c-9921-e1309111f04a)
+TRONGRID_API_KEY = os.environ.get("TRONGRID_API_KEY", "bd404b0a-d24b-403c-9921-e1309111f04a")
 
 # ==================== سيرفر ويب لـ UptimeRobot و OpenAPI ====================
 app = Flask(__name__)
@@ -111,10 +111,6 @@ def verify_payment():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def run_flask():
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
-
 # ==================== قاعدة البيانات ====================
 def init_db():
     conn = sqlite3.connect("bot_database.db")
@@ -199,7 +195,6 @@ def generate_ai_response(prompt, image_bytes=None, mime_type="image/jpeg"):
     
     return "عذراً، حدث خطأ أثناء إعداد المحتوى التسويقي. يرجى المحاولة لاحقاً.\nSorry, an error occurred while generating content."
 
-# دالة مساعدة لإرسال الرسائل بأمان بدون تعطل البوت بسبب Markdown
 async def safe_reply(message, text, reply_markup=None):
     try:
         await message.reply_text(text, parse_mode="Markdown", reply_markup=reply_markup)
@@ -243,7 +238,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     await safe_reply(update.message, welcome_text, reply_markup=InlineKeyboardMarkup(keyboard))
 
-# ميزة B2B Outreach: صياغة عروض للوكلاء الآخرين عبر أمر /pitch
 async def pitch_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     service_description = " ".join(context.args)
     if not service_description:
@@ -262,8 +256,6 @@ async def pitch_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        # استدعاء مباشر لـ Gemini من خلال الـ API أو النظام المحلي
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
         payload = {"contents": [{"parts": [{"text": prompt}]}]}
         res = requests.post(url, json=payload, timeout=25)
@@ -329,7 +321,6 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     full_response = f"{ai_result}\n\n---\n✅ **تم تحليل الصورة وخصم نقطة.** الرصيد المتبقي: {new_credits}"
     await safe_edit(status_msg, full_response)
 
-# ==================== خيارات الدفع ونجوم تلغرام ====================
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -390,7 +381,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chosen_prompt = prompts.get(query.data, "")
         await safe_reply(query.message, f"💡 **تفضل بنسخ هذا القالب وتعديل ما بين القوسين ثم إرساله لي:**\n\n`{chosen_prompt}`")
 
-# ==================== معالجة عملية الدفع بالنجوم ====================
 async def precheckout_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.pre_checkout_query
     if query.invoice_payload != "credits_pack_100":
@@ -407,10 +397,7 @@ async def successful_payment_callback(update: Update, context: ContextTypes.DEFA
         "✅ تمت إضافة **100 نقطة** إلى حسابك آلياً. يمكنك البدء باستغلال الوكيل الذكي الآن!"
     )
 
-# ==================== التشغيل الرئيسي ====================
 def main():
-    threading.Thread(target=run_flask, daemon=True).start()
-
     app_bot = Application.builder().token(BOT_TOKEN).build()
     app_bot.add_handler(CommandHandler("start", start))
     app_bot.add_handler(CommandHandler("pitch", pitch_command))
