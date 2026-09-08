@@ -3,7 +3,7 @@ import sqlite3
 import threading
 import base64
 import requests
-from flask import Flask
+from flask import Flask, jsonify, request
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice
 from telegram.ext import (
     Application,
@@ -19,13 +19,97 @@ from telegram.ext import (
 BOT_TOKEN = os.environ.get("BOT_TOKEN", "8322155608:AAFKwhOH5xK5mY2t2gASK175VhPBitk-mJo")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LJZH5uY_-3KWMlyis3gXUyruGbSv0e866peA30LjeYWg")
 USDT_WALLET_ADDRESS = os.environ.get("USDT_WALLET_ADDRESS", "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX")
+TRONGRID_API_KEY = os.environ.get(bd404b9a-d24b-403c-9921-e1309111f04a)
 
-# ==================== سيرفر ويب لـ UptimeRobot ====================
+# ==================== سيرفر ويب لـ UptimeRobot و OpenAPI ====================
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "AI Marketing Agent is Live & Running 24/7!"
+    return "AI Marketing Agent & B2B Micro-SaaS is Live & Running 24/7! 🚀"
+
+@app.route('/openapi.json')
+def openapi_spec():
+    """ملف التوافق والربط للوكلاء الخارجيين Custom GPTs & Make"""
+    return jsonify(
+        {
+            "openapi": "3.1.0",
+            "info": {
+                "title": "AI Marketing Agent Micro-SaaS API",
+                "version": "1.0.0",
+                "description": "API for automated AI marketing content generation and B2B agent integration.",
+            },
+            "servers": [{"url": request.host_url.rstrip("/")}],
+            "paths": {
+                "/api/v1/generate": {
+                    "post": {
+                        "summary": "Generate AI Marketing Content",
+                        "requestBody": {
+                            "required": True,
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "prompt": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": ["prompt"],
+                                    }
+                                }
+                            },
+                        },
+                        "responses": {
+                            "200": {"description": "Successful Generation"}
+                        },
+                    }
+                }
+            },
+        }
+    )
+
+@app.route("/api/v1/generate", methods=["POST"])
+def api_generate():
+    """نقطة النهاية للوكلاء الخارجيين (B2B Endpoint)"""
+    data = request.json
+    if not data or "prompt" not in data:
+        return jsonify({"error": "Missing 'prompt' in request body"}), 400
+
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        system_instruction = "You are an elite AI Chief Marketing Officer (CMO). Provide high-converting marketing content."
+        payload = {"contents": [{"parts": [{"text": f"{system_instruction}\n\nUSER REQUEST: {data['prompt']}"}]}]}
+        
+        response = requests.post(url, json=payload, timeout=25)
+        if response.status_code == 200:
+            res_text = response.json()['candidates'][0]['content']['parts'][0]['text']
+            return jsonify({"status": "success", "result": res_text}), 200
+        return jsonify({"error": "Failed to generate from AI engine"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/v1/verify-payment", methods=["POST"])
+def verify_payment():
+    """التحقق من دفعات USDT-TRC20 عبر TronGrid"""
+    data = request.json
+    tx_id = data.get("tx_id")
+
+    if not tx_id or not TRONGRID_API_KEY:
+        return jsonify({"error": "Missing transaction ID or TronGrid API key"}), 400
+
+    url = f"https://api.trongrid.io/v1/transactions/{tx_id}/events"
+    headers = {"TRON-PRO-API-KEY": TRONGRID_API_KEY}
+
+    try:
+        res = requests.get(url, headers=headers)
+        if res.status_code == 200:
+            events = res.json().get("data", [])
+            if events:
+                return jsonify({"status": "verified", "message": "Payment confirmed successfully."}), 200
+        return jsonify({"status": "pending", "message": "Transaction not found or invalid."}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def run_flask():
     port = int(os.environ.get("PORT", 8080))
@@ -147,7 +231,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"• 🎥 كتابة سيناريو فيديو قصير (Reels / TikTok) مع مشاهد صوتية وبصرية.\n"
         f"• 📦 وصف منتجات يزيد المبيعات للـ E-commerce.\n"
         f"• 📅 خطط محتوى واستراتيجيات نمو للمتاجر والحسابات.\n"
-        f"• 🖼️ **تحليل صور المنتجات آلياً** (أرسل صورة المنتج مباشرة!).\n\n"
+        f"• 🖼️ **تحليل صور المنتجات آلياً** (أرسل صورة المنتج مباشرة!).\n"
+        f"• 🤝 **عرض شراكة B2B** (عبر أمر `/pitch <وصف الخدمة>`).\n\n"
         f"🔗 **رابط الإحالة / Referral Link (احصل على 5 نقاط مجانية لكل صديق):**\n`{referral_link}`"
     )
 
@@ -157,6 +242,44 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("💳 شراء رصيد | Buy Credits", callback_data="buy_credits"), InlineKeyboardButton("📊 رصيدي وحسابي | My Account", callback_data="check_status")]
     ]
     await safe_reply(update.message, welcome_text, reply_markup=InlineKeyboardMarkup(keyboard))
+
+# ميزة B2B Outreach: صياغة عروض للوكلاء الآخرين عبر أمر /pitch
+async def pitch_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    service_description = " ".join(context.args)
+    if not service_description:
+        await update.message.reply_text(
+            "⚠️ أرسل وصف الخدمة بجانب الأمر.\nمثال: `/pitch توليد محتوى تسويقي تلقائي للمتاجر`"
+        )
+        return
+
+    prompt = f"""
+    أنت وكيل ذكاء اصطناعي تسويقي محترف (B2B). قم بصياغة رسالة تسويقية قصيرة، احترافية، باللغة العربية، 
+    موجهة إلى مطوري أو مشغلي وكلاء ذكاء اصطناعي آخرين أو منصات أتمتة (مثل Make/Zapier). 
+    الهدف من الرسالة هو عرض التكامل (Integration) والتعاون التجاري لتقديم خدماتنا الآلية لهم عبر الـ API الخاص بنا.
+    
+    الخدمة المراد عرضها: {service_description}
+    اجعل الرسالة تحتوي على دعوة واضحة لاتخاذ إجراء (Call to Action) وتجربة نقطة الـ API عبر ملف openapi.json الخاص بنا.
+    """
+
+    try:
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        # استدعاء مباشر لـ Gemini من خلال الـ API أو النظام المحلي
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        payload = {"contents": [{"parts": [{"text": prompt}]}]}
+        res = requests.post(url, json=payload, timeout=25)
+        
+        if res.status_code == 200:
+            ai_text = res.json()['candidates'][0]['content']['parts'][0]['text']
+            pitch_text = (
+                "🤖 **مقترح عرض الشراكة للوكلاء (B2B):**\n\n"
+                f"{ai_text}\n\n"
+                "🔗 *رابط الربط التقني (OpenAPI):* `/openapi.json`"
+            )
+            await update.message.reply_text(pitch_text, parse_mode="Markdown")
+        else:
+            await update.message.reply_text("❌ حدث خطأ أثناء الاتصال بمحرك الذكاء الاصطناعي.")
+    except Exception as e:
+        await update.message.reply_text(f"❌ حدث خطأ أثناء توليد المقترح: {str(e)}")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -247,7 +370,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "🔹 **100 عملية توليد** = 10 USDT\n"
             "🔹 **300 عملية توليد** = 25 USDT\n\n"
             f"📌 **عنوان المحفظة / Wallet Address:**\n`{USDT_WALLET_ADDRESS}`\n\n"
-            "⚠️ بعد التحويل، يرجى إرسال رقم المعاملة (TXID) أو إشعار الدعم لإضافة النقاط لحسابك."
+            "⚠️ بعد التحويل، يرجى إرسال رقم المعاملة (TXID) لإضافة النقاط لحسابك."
         )
         await safe_reply(query.message, pay_text)
 
@@ -290,13 +413,14 @@ def main():
 
     app_bot = Application.builder().token(BOT_TOKEN).build()
     app_bot.add_handler(CommandHandler("start", start))
+    app_bot.add_handler(CommandHandler("pitch", pitch_command))
     app_bot.add_handler(CallbackQueryHandler(button_handler))
     app_bot.add_handler(PreCheckoutQueryHandler(precheckout_callback))
     app_bot.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful_payment_callback))
     app_bot.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     app_bot.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
-    print("🤖 الوكيل التسويقي الشامل يعمل بنجاح مع دعم نجوم تلغرام...")
+    print("🤖 الوكيل التسويقي الشامل وخدمات B2B يعملان بنجاح مع دعم نجوم تلغرام وتوثيق OpenAPI...")
     app_bot.run_polling()
 
 if __name__ == "__main__":
