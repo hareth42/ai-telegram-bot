@@ -20,8 +20,9 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN", "8322155608:AAGet4B90AjDjntI5E-sz9f4od3u
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AQ.Ab8RN6LJZH5uY_-3KWMlyis3gXUyruGbSv0e866peA30LjeYWg")
 USDT_WALLET_ADDRESS = os.environ.get("USDT_WALLET_ADDRESS", "TE9je7QpBfLpG6pduWdyv7RqVz8vUZjWUX")
 TRONGRID_API_KEY = os.environ.get("TRONGRID_API_KEY", "bd404b0a-d24b-403c-9921-e1309111f04a")
+NOWPAYMENTS_API_KEY = os.environ.get("NOWPAYMENTS_API_KEY", "")
 
-# ==================== سيرفر ويب لـ UptimeRobot و OpenAPI ====================
+# ==================== سيرفر ويب لـ UptimeRobot و OpenAPI والحملات التلقائية ====================
 app = Flask(__name__)
 
 @app.route('/')
@@ -55,6 +56,13 @@ def openapi_spec():
                         }
                     },
                     "responses": {"200": {"description": "Successful Generation"}}
+                }
+            },
+            "/auto-campaign/{niche_type}": {
+                "get": {
+                    "summary": "Automated Niche Campaign & Payment Link Generator",
+                    "description": "Generates custom B2B outreach and NOWPayments crypto invoice for specific target sectors.",
+                    "responses": {"200": {"description": "Campaign Generated Successfully"}}
                 }
             }
         }
@@ -94,6 +102,55 @@ def verify_payment():
         return jsonify({"status": "pending", "message": "Transaction not found or invalid."}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# دالة إنشاء فاتورة الدفع عبر NOWPayments المدمجة حديثاً
+def create_nowpayments_invoice(price, currency, description):
+    url = "https://api.nowpayments.io/v1/invoice"
+    headers = {
+        "x-api-key": NOWPAYMENTS_API_KEY,
+        "Content-Type": "application/json"
+    }
+    data = {
+        "price_amount": price,
+        "price_currency": "usd",
+        "pay_currency": currency,
+        "order_description": description,
+        "ipn_callback_url": f"https://{request.host}/api/payment-webhook",
+        "success_url": f"https://{request.host}/success"
+    }
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response_data = response.json()
+        return response_data.get("invoice_url", "خطأ_في_توليد_رابط_الدفع")
+    except Exception as e:
+        return str(e)
+
+# مسار الحملات التلقائية المدمج لاستهداف شرائح B2B والتجارة الإلكترونية
+@app.route('/auto-campaign/<niche_type>')
+def auto_campaign(niche_type):
+    if niche_type == "agri":
+        target = "شركات توريد المعدات الزراعية، أنظمة الري الحديثة والمؤقتات الذكية في السعودية والكويت"
+        service = "بناء صفحة هبوط احترافية بهوية بصرية (أخضر وذهبي) لعرض منتجاتكم واستقبال الطلبات"
+        price = 50
+    elif niche_type == "ecom":
+        target = "بائعي التجارة الإلكترونية ومتاجر مستلزمات الحيوانات الأليفة على أمازون"
+        service = "أداة ويب مخصصة لتوليد وصف المنتجات آلياً وتحليل الكلمات المفتاحية لزيادة المبيعات"
+        price = 35
+    else:
+        return jsonify({"error": "شريحة غير معروفة. يرجى استخدام 'agri' أو 'ecom'"}), 400
+
+    prompt = f"اكتب رسالة تواصل قصيرة جداً ومقنعة لاستهداف {target}. اعرض عليهم {service}. اجعل النبرة احترافية وتدفعهم لطلب الخدمة فوراً دون مقدمات طويلة."
+    marketing_message = generate_ai_response(prompt) 
+    
+    payment_link = create_nowpayments_invoice(price, "usdttrc20", f"تجهيز {service}") 
+
+    final_pitch = f"{marketing_message}\n\nللبدء واستلام النظام فوراً، يمكنكم إتمام الدفع بأمان عبر الرابط التالي:\n{payment_link}"
+    
+    return jsonify({
+        "status": "success",
+        "target_niche": target,
+        "ready_message": final_pitch
+    })
 
 def run_flask():
     port = int(os.environ.get("PORT", 10000))
